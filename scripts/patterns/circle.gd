@@ -1,6 +1,6 @@
 extends Node2D
 
-const BULLET_COUNT = 700
+const BULLET_COUNT = 100
 var x = 60
 
 func _physics_process(_delta: float) -> void:
@@ -12,8 +12,7 @@ func _physics_process(_delta: float) -> void:
 	
 func _on_timer_timeout() -> void:
 	for i in range(BULLET_COUNT):
-		var angle = 2 * PI / BULLET_COUNT * i
-		$ProjectileManager.spawn_projectile(
-			Vector2.ZERO, 
-			Vector2(x, 0).rotated(angle), 
-			Vector2(-20, 0).rotated(angle))
+		var angle = TAU / BULLET_COUNT * i
+		var x := 300 * cos(angle)
+		var y := 300 * sin(angle)
+		$BulletManager.add_bullet(Vector2(x, y))
