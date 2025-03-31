@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="GameSettings" load_steps=2 format=3 uid="uid://bpu85dgvhtiq3"]
+
+[ext_resource type="Script" uid="uid://ldygmf83fvwb" path="res://scripts/settings/game_settings.gd" id="1_pynj7"]
+
+[resource]
+script = ExtResource("1_pynj7")
+sensitivity = 0.1
+show_fps_counter = true
+show_projectile_counter = true
+metadata/_custom_type_script = "uid://ldygmf83fvwb"
