@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3 uid="uid://cngodeku28avl"]
+
+[ext_resource type="PackedScene" uid="uid://dtxnup6nqwfm2" path="res://scenes/patterns/circle.tscn" id="1_o5qli"]
+[ext_resource type="PackedScene" uid="uid://bll8lfyjro3tr" path="res://scenes/hud.tscn" id="2_0wfyh"]
+
+[node name="Main" type="Node2D"]
+
+[node name="CirclePattern" parent="." instance=ExtResource("1_o5qli")]
+position = Vector2(584, 309)
+
+[node name="HUD" parent="." instance=ExtResource("2_0wfyh")]
