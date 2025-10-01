@@ -28,8 +28,8 @@ A tiny, fast bullet system for **Godot 5** that renders large numbers of project
    - Create a `Node2D` root and attach `main.gd` to it (optional: use it as a demo).
    - Add a child **`MultiMeshInstance2D`** node and set its script to **`bullet_controller.gd`**. Name it **`BulletController`** so `$BulletController` works.
    - Assign a **texture/material** to the `MultiMeshInstance2D`:
-     - Create a `CanvasItemMaterial` if you need blending, and a quad mesh via `QuadMesh` or `PlaneMesh` (for 2D, QuadMesh is typical).
-     - Set the `multimesh` mesh to your quad and size it to your bullet sprite dimensions.
+	 - Create a `CanvasItemMaterial` if you need blending, and a quad mesh via `QuadMesh` or `PlaneMesh` (for 2D, QuadMesh is typical).
+	 - Set the `multimesh` mesh to your quad and size it to your bullet sprite dimensions.
    - Optionally, add a UI Button and connect its `pressed()` signal to `_on_spawn_circle_button_pressed` in `main.gd` to try the demo.
 
 3. **Run the scene** and press the button to spawn a ring of bullets.
@@ -51,17 +51,17 @@ class_name BulletController
 extends MultiMeshInstance2D
 
 @abstract class Bullet:
-    var transform: Transform2D
-    var body: RID
+	var transform: Transform2D
+	var body: RID
 
-    func _init(position: Vector2 = Vector2.ZERO) -> void:
-        transform = Transform2D().translated(position)
-        body = PhysicsServer2D.body_create()
+	func _init(position: Vector2 = Vector2.ZERO) -> void:
+		transform = Transform2D().translated(position)
+		body = PhysicsServer2D.body_create()
 
-    func destroy() -> void:
-        PhysicsServer2D.free_rid(body)
+	func destroy() -> void:
+		PhysicsServer2D.free_rid(body)
 
-    @abstract func update(delta: float)
+	@abstract func update(delta: float)
 ```
 
 There are helpers (not shown fully here) such as:
@@ -84,24 +84,24 @@ var velocity: Vector2 = Vector2.ZERO
 var acceleration: Vector2 = Vector2.ZERO
 
 func _init(position: Vector2, shape: Shape2D, space: RID) -> void:
-    super(position)
-    PhysicsServer2D.body_set_mode(body, PhysicsServer2D.BODY_MODE_KINEMATIC)
-    PhysicsServer2D.body_add_shape(body, shape)
-    PhysicsServer2D.body_set_collision_mask(body, 0) # no collisions by default
-    PhysicsServer2D.body_set_space(body, space)
+	super(position)
+	PhysicsServer2D.body_set_mode(body, PhysicsServer2D.BODY_MODE_KINEMATIC)
+	PhysicsServer2D.body_add_shape(body, shape)
+	PhysicsServer2D.body_set_collision_mask(body, 0) # no collisions by default
+	PhysicsServer2D.body_set_space(body, space)
 
 func set_velocity(value: Vector2) -> RegularBullet:
-    velocity = value
-    return self
+	velocity = value
+	return self
 
 func set_acceleration(value: Vector2) -> RegularBullet:
-    acceleration = value
-    return self
+	acceleration = value
+	return self
 
 func update(delta: float) -> void:
-    velocity += acceleration * delta
-    transform.origin += velocity * delta + 0.5 * acceleration * pow(delta, 2)
-    PhysicsServer2D.body_set_state(body, PhysicsServer2D.BODY_STATE_TRANSFORM, transform)
+	velocity += acceleration * delta
+	transform.origin += velocity * delta + 0.5 * acceleration * pow(delta, 2)
+	PhysicsServer2D.body_set_state(body, PhysicsServer2D.BODY_STATE_TRANSFORM, transform)
 ```
 
 ## Usage patterns
@@ -125,13 +125,13 @@ extends BulletController.Bullet
 var target: Node2D
 
 func update(delta: float) -> void:
-    if target:
-        var to_target := (target.global_position - transform.origin).normalized()
-        var current := Vector2.RIGHT.rotated(transform.get_rotation())
-        var new_dir := current.slerp(to_target, clamp(turn_rate * delta, 0.0, 1.0))
-        # Move forward in the new direction
-        transform = Transform2D(new_dir.angle(), transform.origin + new_dir * 200.0 * delta)
-    PhysicsServer2D.body_set_state(body, PhysicsServer2D.BODY_STATE_TRANSFORM, transform)
+	if target:
+		var to_target := (target.global_position - transform.origin).normalized()
+		var current := Vector2.RIGHT.rotated(transform.get_rotation())
+		var new_dir := current.slerp(to_target, clamp(turn_rate * delta, 0.0, 1.0))
+		# Move forward in the new direction
+		transform = Transform2D(new_dir.angle(), transform.origin + new_dir * 200.0 * delta)
+	PhysicsServer2D.body_set_state(body, PhysicsServer2D.BODY_STATE_TRANSFORM, transform)
 ```
 
 Register it with the controller the same way you add `RegularBullet`.
