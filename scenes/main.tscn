@@ -1,8 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://cngodeku28avl"]
-
-[ext_resource type="PackedScene" uid="uid://dtxnup6nqwfm2" path="res://scenes/pattern.tscn" id="1_o5qli"]
-
-[node name="Main" type="Node2D"]
-
-[node name="Pattern" parent="." instance=ExtResource("1_o5qli")]
-position = Vector2(569.007, 327.901)

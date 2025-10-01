@@ -1,5 +1,5 @@
 class_name RegularBullet
-extends BulletManager.Bullet
+extends BulletController.Bullet
 
 var velocity: Vector2 = Vector2.ZERO
 var acceleration: Vector2 = Vector2.ZERO
@@ -21,11 +21,9 @@ func set_acceleration(value: Vector2) -> RegularBullet:
 	return self
 
 func update(delta: float) -> void:
-	# TODO: Implement the bullet movement logic here.
-
 	velocity += acceleration * delta
 	transform.origin += velocity * delta + 0.5 * acceleration * pow(delta, 2)
-
+	
 	PhysicsServer2D.body_set_state(body, PhysicsServer2D.BODY_STATE_TRANSFORM, transform)
 
 func debug(vectors: PackedVector2Array, colors: PackedColorArray) -> void:
