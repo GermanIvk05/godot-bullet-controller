@@ -16,7 +16,7 @@ func _on_spawn_circle_button_pressed() -> void:
 	for i in bullet_count:
 		var angle := TAU * float(i) / float(bullet_count)
 		var dir := Vector2.RIGHT.rotated(angle)
-		var bullet := RegularBullet.new(screen_center, shape, get_world_2d().get_space())
+		var bullet := Bullet.new(screen_center, shape, get_world_2d().get_space())
 		
 		bullet.set_velocity(dir * bullet_speed)
 		$BulletController.add_bullet(bullet)

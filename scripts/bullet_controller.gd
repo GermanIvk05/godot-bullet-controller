@@ -1,20 +1,6 @@
 class_name BulletController
 extends MultiMeshInstance2D
 
-@abstract class Bullet:
-	var transform: Transform2D
-	var body: RID
-
-	func _init(position: Vector2 = Vector2.ZERO) -> void:
-		transform = Transform2D().translated(position)
-		body = PhysicsServer2D.body_create()
-	
-	func destroy() -> void:
-		PhysicsServer2D.free_rid(body)
-
-	@abstract func update(delta: float)
-
-
 var bullets: Array[Bullet] = []
 
 func _ready() -> void:

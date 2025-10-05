@@ -1,12 +1,12 @@
 [gd_scene load_steps=12 format=3 uid="uid://cngodeku28avl"]
 
-[ext_resource type="Script" uid="uid://bgigjjn8xihng" path="res://scripts/main.gd" id="1_272bh"]
+[ext_resource type="Script" uid="uid://b454lvdesbjel" path="res://scripts/main.gd" id="1_272bh"]
 [ext_resource type="Texture2D" uid="uid://duy55sr53r254" path="res://assets/bullet_00.png" id="2_5vw27"]
 [ext_resource type="Texture2D" uid="uid://b5dc0dx1egv3x" path="res://assets/bullet_01.png" id="3_kek77"]
 [ext_resource type="Texture2D" uid="uid://dwgb8r83yl7w1" path="res://assets/bullet_02.png" id="4_4c57u"]
 [ext_resource type="Texture2D" uid="uid://dl588gr3j3pvt" path="res://assets/bullet_03.png" id="5_efxa6"]
 [ext_resource type="Texture2D" uid="uid://b4lsn0vf3jjcb" path="res://assets/bullet_04.png" id="6_dg77c"]
-[ext_resource type="Script" uid="uid://esicv72iojar" path="res://scripts/bullet_controller.gd" id="7_ycdy4"]
+[ext_resource type="Script" uid="uid://cocu3sfouuhpi" path="res://scripts/bullet_controller.gd" id="7_ycdy4"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_0wfyh"]
 radius = 8.0
@@ -41,7 +41,6 @@ shape = SubResource("CircleShape2D_0wfyh")
 multimesh = SubResource("MultiMesh_trceg")
 texture = SubResource("AnimatedTexture_a8y0u")
 script = ExtResource("7_ycdy4")
-metadata/_custom_type_script = "uid://esicv72iojar"
 
 [node name="Control" type="CanvasLayer" parent="."]
 
