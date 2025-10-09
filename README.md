@@ -1,155 +1,67 @@
-# Godot Bullet Controller
+# Bullet System (Godot 4)
 
-A tiny, fast bullet system for **Godot 5** that renders large numbers of projectiles with a `MultiMeshInstance2D` while updating motion through the low‑level `PhysicsServer2D` API.
+A lightweight, MVVM-style bullet system for **Godot 4** that separates game logic (Model), scene orchestration (ViewModel), and rendering (View) using a performant `MultiMeshInstance2D`.
 
-> Works great for shmups, radial barrages, and any effect that needs many simple moving sprites/particles with per‑instance transforms.
+> Files included
+>
+> - `bullet.gd` — Base **Bullet** class (kinematic Body via `PhysicsServer2D`)  
+> - `bullet_model.gd` — **BulletModel**: owns bullet data, spawning, physics, and lifecycle  
+> - `bullet_viewmodel.gd` — **BulletViewModel**: bridges Model ↔ View, emits signals, ticks physics  
+> - `bullet_view.gd` — **BulletView**: fast batched rendering with `MultiMeshInstance2D`
 
 ## Features
 
-- **High‑throughput rendering** with `MultiMeshInstance2D` (one draw call; thousands of instances possible).
-- **Lightweight physics** using `PhysicsServer2D` bodies (kinematic), so you can opt into collisions later.
-- **Composable bullets**: a base `BulletController.Bullet` class you can extend for custom behaviors.
-- **Simple API** to add/remove bullets from a central controller.
-- **Deterministic updates** via a single `update(delta)` per bullet.
+- **MVVM separation**: clean boundaries between logic, update loop, and rendering
+- **Batched rendering**: `MultiMeshInstance2D` for thousands of bullets
+- **Signals-first API**: `bullet_created`, `bullets_updated`, `bullet_destroyed`
+- **PhysicsServer2D**-backed bullets (kinematic bodies) for control and performance
+- **Pluggable**: provide any `Shape2D`, acceleration, and max velocity via exports
 
-## Requirements
+## Getting Started
 
-- Godot **5.x** (tested with 5.x API names used in these scripts).
-- A 2D project.
+### Requirements
 
-## Quick Start
+- **Godot 4.x** (uses `PhysicsServer2D` & `MultiMeshInstance2D`)
+- A `Shape2D` (e.g., `CircleShape2D`) to define the bullet collision/size
 
-1. **Copy files** into your project (e.g. `res://scripts/`):
-   - `bullet_controller.gd`
-   - `bullet.gd`
-   - `main.gd` (sample spawner)
+### 1) Add Nodes to Your Scene
 
-2. **Scene setup**
-   - Create a `Node2D` root and attach `main.gd` to it (optional: use it as a demo).
-   - Add a child **`MultiMeshInstance2D`** node and set its script to **`bullet_controller.gd`**. Name it **`BulletController`** so `$BulletController` works.
-   - Assign a **texture/material** to the `MultiMeshInstance2D`:
-	 - Create a `CanvasItemMaterial` if you need blending, and a quad mesh via `QuadMesh` or `PlaneMesh` (for 2D, QuadMesh is typical).
-	 - Set the `multimesh` mesh to your quad and size it to your bullet sprite dimensions.
-   - Optionally, add a UI Button and connect its `pressed()` signal to `_on_spawn_circle_button_pressed` in `main.gd` to try the demo.
+1. Add a **Node2D** and attach `bullet_viewmodel.gd` (or create a custom node that instantiates it).
+2. Add a **MultiMeshInstance2D** as a sibling or child and attach `bullet_view.gd`.
+3. In the **BulletView** inspector, set **`view_model`** to your BulletViewModel node.
+4. Create a **BulletModel** resource and assign it to **`view_model.model`**. Configure:
+   - `shape` → your `Shape2D` (e.g., `CircleShape2D`)
+   - `max_velocity` → cap speed (e.g., `Vector2(1200, 1200)`)
+   - `acceleration` → per-axis acceleration (e.g., `Vector2(0, 0)`)
 
-3. **Run the scene** and press the button to spawn a ring of bullets.
+> The `BulletViewModel` automatically sets `model.space = get_world_2d().get_space()` in `_ready()`.
 
-## How it works
+### 2) Spawning Bullets
 
-### `BulletController` (`bullet_controller.gd`)
-
-A controller node that owns:
-
-- A `MultiMesh` for rendering bullets in a single draw call.
-- An array of **`Bullet`** instances (lightweight logic holders).
-- Add/remove helpers that keep the `MultiMesh` instance transforms and count in sync.
-
-Key pieces (simplified):
+Call `spawn_bullet()` on the **BulletViewModel** with a velocity in pixels/second. The bullet uses the view model's `global_position` as the origin.
 
 ```gdscript
-class_name BulletController
-extends MultiMeshInstance2D
+# Example: Fire a bullet to the right at 800 px/s
+@onready var bullets: BulletViewModel = $BulletViewModel
 
-@abstract class Bullet:
-	var transform: Transform2D
-	var body: RID
-
-	func _init(position: Vector2 = Vector2.ZERO) -> void:
-		transform = Transform2D().translated(position)
-		body = PhysicsServer2D.body_create()
-
-	func destroy() -> void:
-		PhysicsServer2D.free_rid(body)
-
-	@abstract func update(delta: float)
+func _input(event):
+    if event.is_action_pressed("fire"):
+        bullets.spawn_bullet(Vector2(800, 0))
 ```
 
-There are helpers (not shown fully here) such as:
+When a bullet is spawned/updated/destroyed, the view model emits:
+- `bullet_created(total_count, location)`
+- `bullets_updated(positions)` (every physics tick)
+- `bullet_destroyed`
 
-- `add_bullet(bullet: Bullet) -> void` — appends a new bullet and writes its transform into the next MultiMesh instance, increasing `visible_instance_count`.
-- `remove_bullet(id: int) -> void` — removes and frees a bullet by index, decreasing `visible_instance_count`.
-- `_process(delta)` or `_physics_process(delta)` (depending on how you wire it) — iterates bullets, calls `update(delta)`, and writes each transform to the `MultiMesh`.
+The **BulletView** listens and updates its `MultiMesh` transforms accordingly. It also sets a `custom_aabb` based on the current viewport for efficient culling.
 
-> Note: The controller is implemented as a `MultiMeshInstance2D`, so you **must** assign a mesh/material for visible rendering.
-
-### `RegularBullet` (`bullet.gd`)
-
-A concrete bullet that extends the nested base class:
-
-```gdscript
-class_name RegularBullet
-extends BulletController.Bullet
-
-var velocity: Vector2 = Vector2.ZERO
-var acceleration: Vector2 = Vector2.ZERO
-
-func _init(position: Vector2, shape: Shape2D, space: RID) -> void:
-	super(position)
-	PhysicsServer2D.body_set_mode(body, PhysicsServer2D.BODY_MODE_KINEMATIC)
-	PhysicsServer2D.body_add_shape(body, shape)
-	PhysicsServer2D.body_set_collision_mask(body, 0) # no collisions by default
-	PhysicsServer2D.body_set_space(body, space)
-
-func set_velocity(value: Vector2) -> RegularBullet:
-	velocity = value
-	return self
-
-func set_acceleration(value: Vector2) -> RegularBullet:
-	acceleration = value
-	return self
-
-func update(delta: float) -> void:
-	velocity += acceleration * delta
-	transform.origin += velocity * delta + 0.5 * acceleration * pow(delta, 2)
-	PhysicsServer2D.body_set_state(body, PhysicsServer2D.BODY_STATE_TRANSFORM, transform)
-```
-
-## Usage patterns
-
-- **Linear motion:** set `velocity` only.
-- **Accelerated motion:** also set `acceleration` (e.g. gravity‐like pull or easing in/out).
-- **Spiral/radial patterns:** vary `dir` and/or update `velocity` in `update(delta)` for custom bullets.
-- **Lifetime & culling:** implement lifespan or off‑screen checks inside your `update(delta)` and call `remove_bullet(index)` from the controller when needed.
-
----
+### 3) Physics Updates
+`BulletViewModel._physics_process(delta)` forwards the tick to `BulletModel.physics_update(delta)`, which updates all bullet positions and velocities, then emits `bullets_updated(...)` with a `PackedVector2Array` for fast, contiguous memory copies into the MultiMesh.
 
 ## Extending
 
-Create your own bullet types by extending `BulletController.Bullet`:
-
-```gdscript
-class_name HomingBullet
-extends BulletController.Bullet
-
-@export var turn_rate: float = 5.0
-var target: Node2D
-
-func update(delta: float) -> void:
-	if target:
-		var to_target := (target.global_position - transform.origin).normalized()
-		var current := Vector2.RIGHT.rotated(transform.get_rotation())
-		var new_dir := current.slerp(to_target, clamp(turn_rate * delta, 0.0, 1.0))
-		# Move forward in the new direction
-		transform = Transform2D(new_dir.angle(), transform.origin + new_dir * 200.0 * delta)
-	PhysicsServer2D.body_set_state(body, PhysicsServer2D.BODY_STATE_TRANSFORM, transform)
-```
-
-Register it with the controller the same way you add `RegularBullet`.
-
-## Tips & gotchas
-
-- The controller depends on its **`MultiMesh`** being set up. If bullets are invisible, verify you created and assigned a mesh and material.
-- `collision_mask` is set to `0` in `RegularBullet`, so by default bullets **won’t collide**. Change masks/layers and add query/callbacks if you need hits.
-- Consider using `_physics_process(delta)` in the controller if you need fixed‑timestep updates.
-- For extremely large counts, pre‑allocate the `MultiMesh` instance count and reuse bullet slots to avoid reallocation.
-- Clean up: call `remove_bullet()` or ensure bullets `destroy()` their RIDs when done (e.g., on scene change).
-
----
-
-## Minimal code to spawn one bullet
-
-```gdscript
-var b := RegularBullet.new(global_position, preload("res://circle_shape.tres"), get_world_2d().get_space())
-b.set_velocity(Vector2.RIGHT * 600.0)
-$BulletController.add_bullet(b)
-```
+- **Lifetimes / Despawn**: add TTL or out‑of‑bounds checks in `BulletModel.physics_update` and emit `bullet_destroyed` when removing instances.
+- **Collisions**: turn on collision masks and query shapes with `PhysicsServer2D` or use an `Area2D` field test per bullet when needed.
+- **Trails / Effects**: render particles or trail meshes indexed to bullet positions.
+- **Pooling**: transform `bullets` into a pool to avoid allocations under heavy fire.
