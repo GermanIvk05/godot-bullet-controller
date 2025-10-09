@@ -1,12 +1,10 @@
 class_name Bullet
-var transform: Transform2D
+
+var position := Vector2()
+var velocity := Vector2()
 var body: RID
 
-var velocity: Vector2 = Vector2.ZERO
-var acceleration: Vector2 = Vector2.ZERO
-
-func _init(position: Vector2, shape: Shape2D, space: RID) -> void:
-	transform = Transform2D().translated(position)
+func _init(shape: Shape2D, space: RID) -> void:
 	body = PhysicsServer2D.body_create()
 	
 	PhysicsServer2D.body_set_mode(body, PhysicsServer2D.BODY_MODE_KINEMATIC)
@@ -19,18 +17,7 @@ func destroy() -> void:
 	PhysicsServer2D.free_rid(body)
 
 
-func set_velocity(value: Vector2) -> Bullet:
-	velocity = value
-	return self
-
-
-func set_acceleration(value: Vector2) -> Bullet:
-	acceleration = value
-	return self
-
-
-func update(delta: float) -> void:
-	velocity += acceleration * delta
-	transform.origin += velocity * delta + 0.5 * acceleration * pow(delta, 2)
-	
-	PhysicsServer2D.body_set_state(body, PhysicsServer2D.BODY_STATE_TRANSFORM, transform)
+func update() -> void:
+	var transform2d := Transform2D()
+	transform2d.origin = position
+	PhysicsServer2D.body_set_state(body, PhysicsServer2D.BODY_STATE_TRANSFORM, transform2d)
