@@ -1,6 +1,7 @@
 class_name Bullet
 
 var position := Vector2()
+var _transform := Transform2D()
 var velocity := Vector2()
 var body: RID
 
@@ -18,6 +19,5 @@ func destroy() -> void:
 
 
 func update() -> void:
-	var transform2d := Transform2D()
-	transform2d.origin = position
-	PhysicsServer2D.body_set_state(body, PhysicsServer2D.BODY_STATE_TRANSFORM, transform2d)
+	_transform.origin = position
+	PhysicsServer2D.body_set_state(body, PhysicsServer2D.BODY_STATE_TRANSFORM, _transform)

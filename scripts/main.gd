@@ -16,4 +16,4 @@ func _on_spawn_circle_button_pressed() -> void:
 	for i in bullet_count:
 		var angle := TAU * float(i) / float(bullet_count)
 		var dir := Vector2.RIGHT.rotated(angle)
-		$BulletViewModel.spawn_bullet(dir * bullet_speed)
+		$BulletModel.spawn_bullet(get_viewport_rect().get_center(), dir * bullet_speed)

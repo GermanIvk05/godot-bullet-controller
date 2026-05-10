@@ -1,25 +1,19 @@
-[gd_scene load_steps=16 format=3 uid="uid://cngodeku28avl"]
+[gd_scene format=3 uid="uid://cngodeku28avl"]
 
-[ext_resource type="Script" uid="uid://b454lvdesbjel" path="res://scripts/main.gd" id="1_272bh"]
-[ext_resource type="Script" uid="uid://l8v0uakpcn35" path="res://scripts/bullet_model.gd" id="3_1bvp3"]
-[ext_resource type="Script" uid="uid://btqfjnhvlw63w" path="res://scripts/bullet_view.gd" id="3_h2yge"]
+[ext_resource type="Script" uid="uid://8n4waxbck604" path="res://scripts/main.gd" id="1_272bh"]
+[ext_resource type="Script" uid="uid://b23kpfk56e7u" path="res://scripts/bullet_model.gd" id="3_1bvp3"]
+[ext_resource type="Script" uid="uid://cq50muv8nafop" path="res://scripts/bullet_view.gd" id="3_h2yge"]
 [ext_resource type="Texture2D" uid="uid://duy55sr53r254" path="res://assets/bullet_00.png" id="4_kek77"]
 [ext_resource type="Texture2D" uid="uid://b5dc0dx1egv3x" path="res://assets/bullet_01.png" id="5_4c57u"]
 [ext_resource type="Texture2D" uid="uid://dwgb8r83yl7w1" path="res://assets/bullet_02.png" id="6_efxa6"]
 [ext_resource type="Texture2D" uid="uid://dl588gr3j3pvt" path="res://assets/bullet_03.png" id="7_dg77c"]
-[ext_resource type="Script" uid="uid://cocu3sfouuhpi" path="res://scripts/bullet_viewmodel.gd" id="7_ycdy4"]
 [ext_resource type="Texture2D" uid="uid://b4lsn0vf3jjcb" path="res://assets/bullet_04.png" id="8_ycdy4"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_0wfyh"]
 radius = 8.0
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_w48qg"]
+[sub_resource type="CircleShape2D" id="CircleShape2D_5vw27"]
 radius = 8.0
-
-[sub_resource type="Resource" id="Resource_vivmo"]
-script = ExtResource("3_1bvp3")
-shape = SubResource("CircleShape2D_w48qg")
-metadata/_custom_type_script = "uid://l8v0uakpcn35"
 
 [sub_resource type="QuadMesh" id="QuadMesh_2cqfq"]
 size = Vector2(32, 32)
@@ -43,26 +37,25 @@ frame_3/duration = 1.0
 frame_4/texture = ExtResource("8_ycdy4")
 frame_4/duration = 1.0
 
-[node name="Main" type="Node2D"]
+[node name="Main" type="Node2D" unique_id=400808997]
 script = ExtResource("1_272bh")
 shape = SubResource("CircleShape2D_0wfyh")
 
-[node name="BulletViewModel" type="Node2D" parent="."]
-position = Vector2(576, 256)
-script = ExtResource("7_ycdy4")
-model = SubResource("Resource_vivmo")
-metadata/_custom_type_script = "uid://cocu3sfouuhpi"
+[node name="BulletModel" type="Node2D" parent="." unique_id=559356714]
+script = ExtResource("3_1bvp3")
+shape = SubResource("CircleShape2D_5vw27")
+max_velocity = 400.0
+metadata/_custom_type_script = "uid://b23kpfk56e7u"
 
-[node name="BulletView" type="MultiMeshInstance2D" parent="." node_paths=PackedStringArray("view_model")]
+[node name="BulletView" type="MultiMeshInstance2D" parent="." unique_id=650304403 node_paths=PackedStringArray("model")]
 multimesh = SubResource("MultiMesh_yaehf")
 texture = SubResource("AnimatedTexture_074og")
 script = ExtResource("3_h2yge")
-view_model = NodePath("../BulletViewModel")
-metadata/_custom_type_script = "uid://btqfjnhvlw63w"
+model = NodePath("../BulletModel")
 
-[node name="Control" type="CanvasLayer" parent="."]
+[node name="Control" type="CanvasLayer" parent="." unique_id=2125190393]
 
-[node name="SpawnCircleButton" type="Button" parent="Control"]
+[node name="SpawnCircleButton" type="Button" parent="Control" unique_id=915748753]
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5

@@ -1,38 +1,61 @@
-extends Resource
+extends Node2D
 class_name BulletModel
 
+signal bullets_updated(positions: PackedVector2Array)
+
 @export var shape: Shape2D
-@export var max_velocity := Vector2()
+@export var max_velocity := 0.0
 @export var acceleration := Vector2()
 
 var bullets: Array[Bullet] = []
 var space := RID()
 
-func get_bullet_positions() -> PackedVector2Array:
-	return bullets.map(func(b: Bullet): return b.position) as PackedVector2Array
+func _ready() -> void:
+	space = get_world_2d().get_space()
 
 
-func physics_update(delta: float) -> void:
-	for bullet in bullets:
-		bullet.velocity += acceleration * delta
-		bullet.position += bullet.velocity * delta + 0.5 * acceleration * pow(delta, 2)
-		bullet.update()
+func _physics_process(delta: float) -> void:
+	var viewport_rect := get_viewport_rect()
+	var positions := PackedVector2Array()
+	positions.resize(bullets.size())
+	
+	var i := 0
+	while i < bullets.size():
+		var bullet := bullets[i]
+		_update_bullet(bullet, delta)
+		
+		if viewport_rect.has_point(bullet.position):
+			positions.set(i, bullet.position)
+			i += 1
+		else:
+			despawn_bullet(bullet)
+	positions.resize(i)
+	bullets_updated.emit(positions)
 
 
-func spawn_bullet(position: Vector2, velocity: Vector2) -> Bullet:
+func _update_bullet(bullet: Bullet, delta: float) -> void:
+	bullet.velocity += acceleration * delta
+	bullet.velocity = bullet.velocity.limit_length(max_velocity)
+	bullet.position += bullet.velocity * delta
+	bullet.update()
+
+
+func spawn_bullet(location: Vector2, velocity: Vector2) -> Bullet:
 	var bullet := Bullet.new(shape, space)
-	bullet.position = position
+	bullet.position = location
 	bullet.velocity = velocity
-	# bullet.update()
 	bullets.append(bullet)
 	return bullet
 
 
-func count() -> int:
-	return bullets.size()
+func despawn_bullet(bullet: Bullet) -> void:
+	bullet.destroy()
+	var idx := bullets.find(bullet)
+	bullets[idx] = bullets[-1]
+	bullets.pop_back()
 
 
-func clear() -> void:
+func _exit_tree() -> void:
 	for bullet in bullets:
 		bullet.destroy()
 	bullets.clear()
