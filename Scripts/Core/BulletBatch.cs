@@ -18,7 +18,6 @@ public class BulletBatch
     private Shape2D _shape;
     private uint _collisionLayer;
     private uint _collisionMask;
-    private Transform2D _transform = Transform2D.Identity;
     
     public int Count => _bullets.Count;
     public IMovementStrategy MovementStrategy { get; set; }
@@ -46,8 +45,8 @@ public class BulletBatch
         PhysicsServer2D.BodySetCollisionLayer(body, _collisionLayer);
         PhysicsServer2D.BodySetCollisionMask(body, _collisionMask);
 
-        _transform.Origin = position;
-        PhysicsServer2D.BodySetState(body, PhysicsServer2D.BodyState.Transform, _transform);
+        var t = new Transform2D(0f, position);
+        PhysicsServer2D.BodySetState(body, PhysicsServer2D.BodyState.Transform, t);
     
         _bodies.Add(body);
     }
@@ -70,18 +69,19 @@ public class BulletBatch
             bullet.Lifetime += delta;
             bullet.Position += MovementStrategy.Calculate(bullet.Position, bullet.Angle, bullet.Lifetime, delta);
             
-            _transform.Origin = bullet.Position;
-            PhysicsServer2D.BodySetState(_bodies[i], PhysicsServer2D.BodyState.Transform, _transform);
+            var t = new Transform2D(0f, bullet.Position);
+            PhysicsServer2D.BodySetState(_bodies[i], PhysicsServer2D.BodyState.Transform, t);
 
             bool shouldDespawn = false;
             foreach (var condition in DespawnConditions)
             {
-                if (condition.ShouldDespawn(bullet))
+                if (condition.ShouldDespawn(bullet.Position, bullet.Angle, bullet.Lifetime))
                 {
                     shouldDespawn = true;
                     break;
                 }
             }
+            
             if (shouldDespawn)
             {
                 Despawn(i);

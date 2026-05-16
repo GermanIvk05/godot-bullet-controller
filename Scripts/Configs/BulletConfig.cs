@@ -6,7 +6,7 @@ public partial class BulletConfig : Resource
 {
     [ExportGroup("Combat")]
     [Export] public int Damage { get; set; } = 400;
-    [Export] public Shape2D Shape;
+    [Export] public Shape2D Shape { get; set; }
 
     [ExportGroup("Movement")]
     [Export] public MovementConfig Movement { get; set; }
