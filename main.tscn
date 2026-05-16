@@ -1,3 +1,91 @@
 [gd_scene format=3 uid="uid://cngodeku28avl"]
 
-[node name="Main" type="Node2D" unique_id=400808997]
+[ext_resource type="Script" uid="uid://bnexe786n806n" path="res://Main.cs" id="1_ig7tw"]
+[ext_resource type="Script" uid="uid://bj62w7er6en34" path="res://Scripts/Patterns/CirclePattern.cs" id="2_dg77c"]
+[ext_resource type="Script" uid="uid://b4miacwu1v2n3" path="res://Scripts/Configs/BulletConfig.cs" id="2_efxa6"]
+[ext_resource type="Script" uid="uid://drnece1h5dqk8" path="res://Scripts/Core/BulletController.cs" id="4_ycdy4"]
+[ext_resource type="Script" uid="uid://cokl8wmu0wf6v" path="res://Scripts/Configs/Spawn/LifetimeDespawnCondition.cs" id="5_ycdy4"]
+[ext_resource type="Texture2D" uid="uid://duy55sr53r254" path="res://Assets/bullet_00.png" id="6_vivmo"]
+[ext_resource type="Texture2D" uid="uid://b5dc0dx1egv3x" path="res://Assets/bullet_01.png" id="7_2cqfq"]
+[ext_resource type="Texture2D" uid="uid://dwgb8r83yl7w1" path="res://Assets/bullet_02.png" id="8_yaehf"]
+[ext_resource type="Texture2D" uid="uid://dl588gr3j3pvt" path="res://Assets/bullet_03.png" id="9_074og"]
+[ext_resource type="Texture2D" uid="uid://b4lsn0vf3jjcb" path="res://Assets/bullet_04.png" id="10_cegan"]
+[ext_resource type="Script" uid="uid://d1bk44fyt2c5q" path="res://Scripts/Core/BulletView.cs" id="11_82xsv"]
+[ext_resource type="Script" uid="uid://q54oi38ub0fn" path="res://Scripts/Configs/Movement/OscillateMovementConfig.cs" id="11_dg77c"]
+
+[sub_resource type="Resource" id="Resource_w48qg"]
+script = ExtResource("2_dg77c")
+BulletCount = 20
+metadata/_custom_type_script = "uid://bj62w7er6en34"
+
+[sub_resource type="QuadMesh" id="QuadMesh_0odxb"]
+size = Vector2(32, 32)
+
+[sub_resource type="MultiMesh" id="MultiMesh_lswn8"]
+mesh = SubResource("QuadMesh_0odxb")
+
+[sub_resource type="AnimatedTexture" id="AnimatedTexture_a6jrf"]
+frames = 5
+speed_scale = 2.0
+frame_0/texture = ExtResource("6_vivmo")
+frame_1/texture = ExtResource("7_2cqfq")
+frame_1/duration = 1.0
+frame_2/texture = ExtResource("8_yaehf")
+frame_2/duration = 1.0
+frame_3/texture = ExtResource("9_074og")
+frame_3/duration = 1.0
+frame_4/texture = ExtResource("10_cegan")
+frame_4/duration = 1.0
+
+[sub_resource type="Resource" id="Resource_ycdy4"]
+script = ExtResource("5_ycdy4")
+MaxLifetime = 1.0
+metadata/_custom_type_script = "uid://cokl8wmu0wf6v"
+
+[sub_resource type="Resource" id="Resource_vivmo"]
+script = ExtResource("11_dg77c")
+ForwardSpeed = 200.0
+metadata/_custom_type_script = "uid://q54oi38ub0fn"
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_2cqfq"]
+radius = 8.0
+
+[sub_resource type="Resource" id="Resource_yaehf"]
+script = ExtResource("2_efxa6")
+Shape = SubResource("CircleShape2D_2cqfq")
+Movement = SubResource("Resource_vivmo")
+DespawnConditions = [SubResource("Resource_ycdy4")]
+metadata/_custom_type_script = "uid://b4miacwu1v2n3"
+
+[node name="Main" type="Node2D" unique_id=400808997 node_paths=PackedStringArray("Controller")]
+script = ExtResource("1_ig7tw")
+Controller = NodePath("BulletController")
+Pattern = SubResource("Resource_w48qg")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1218908650]
+
+[node name="Button" type="Button" parent="CanvasLayer" unique_id=1829047038]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -29.0
+offset_top = 64.0
+offset_right = 29.0
+offset_bottom = 95.0
+grow_horizontal = 2
+text = "Attack"
+
+[node name="BulletView" type="MultiMeshInstance2D" parent="." unique_id=632787081]
+multimesh = SubResource("MultiMesh_lswn8")
+texture = SubResource("AnimatedTexture_a6jrf")
+script = ExtResource("11_82xsv")
+metadata/_custom_type_script = "uid://d1bk44fyt2c5q"
+
+[node name="BulletController" type="Node2D" parent="." unique_id=827963511 node_paths=PackedStringArray("View")]
+position = Vector2(576, 320)
+script = ExtResource("4_ycdy4")
+View = NodePath("../BulletView")
+Config = SubResource("Resource_yaehf")
+metadata/_custom_type_script = "uid://drnece1h5dqk8"
+
+[connection signal="pressed" from="CanvasLayer/Button" to="." method="OnButtonPressed"]
