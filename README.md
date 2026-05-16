@@ -1,58 +1,123 @@
-# Bullet System (Godot 4)
+# gd-bullet-system
 
-A lightweight, MVVM-style bullet system for **Godot 4** that separates game logic (Model), scene orchestration (ViewModel), and rendering (View) using a performant `MultiMeshInstance2D`.
+A high-performance bullet system for **Godot 4 (C#)** designed for bullet hell-style games. It separates bullet logic, physics, and rendering into distinct layers, and supports thousands of bullets via batched `MultiMeshInstance2D` rendering and direct `PhysicsServer2D` integration.
 
-> Files included
->
-> - `bullet.gd` — Base **Bullet** class (kinematic Body via `PhysicsServer2D`)  
-> - `bullet_model.gd` — **BulletModel**: owns bullet data, spawning, physics, lifecycle, and ticks physics  
-> - `bullet_view.gd` — **BulletView**: fast batched rendering with `MultiMeshInstance2D`
+## Architecture
+
+The system has two implementations behind a shared interface:
+
+**`ServerBulletController`** — production path. Manages bullets as raw physics bodies via `PhysicsServer2D` with no scene tree overhead. Renders using `BulletView` (`MultiMeshInstance2D`) with a single batched `RenderingServer` buffer upload per frame.
+
+**`NodeBulletController`** — debug/editor path. Each bullet is a `BulletNode` (`Node2D`) in the scene tree, making it easy to inspect individual bullets at runtime.
+
+Both controllers share the same `BulletConfig`, movement strategies, despawn conditions, and spawn patterns.
+
+```
+BulletController (abstract)
+├── ServerBulletController   ← physics server + multimesh rendering
+└── NodeBulletController     ← scene tree nodes
+
+BulletBatch                  ← manages a group of bullets (server path)
+NodeBulletBatch              ← manages a group of bullets (node path)
+
+BulletConfig                 ← exported resource: shape, damage, movement, despawn, collision
+BulletPattern (abstract)     ← defines spawn positions and angles
+MovementConfig (abstract)    ← defines per-frame movement behaviour
+DespawnCondition (abstract)  ← defines when a bullet should be removed
+```
 
 ## Features
 
-- **MVVM separation**: clean boundaries between logic, update loop, and rendering
-- **Batched rendering**: `MultiMeshInstance2D` for thousands of bullets
-- **PhysicsServer2D**-backed bullets (kinematic bodies) for control and performance
-- **Pluggable**: provide any `Shape2D`, acceleration, and max velocity via exports
+- **Batched rendering** via `RenderingServer.MultimeshSetBuffer` — one native call per frame regardless of bullet count
+- **PhysicsServer2D** kinematic bodies for collision without scene tree nodes
+- **Strategy pattern** for movement — swap between `LinearMovementConfig`, `OscillateMovementConfig`, or write your own
+- **Composable despawn conditions** — combine multiple conditions per bullet type (e.g. lifetime + out-of-bounds)
+- **Pluggable spawn patterns** — `CirclePattern`, `ArcPattern`, or implement `BulletPattern` for custom layouts
+- **Data-driven configuration** — everything is a Godot `Resource`, editable in the inspector
 
 ## Getting Started
 
 ### Requirements
 
-- **Godot 4.x** (uses `PhysicsServer2D` & `MultiMeshInstance2D`)
-- A `Shape2D` (e.g., `CircleShape2D`) to define the bullet collision/size
+- Godot 4.x with C# (.NET) support
 
-### 1) Add Nodes to Your Scene
+### Setup
 
-1. Add a **Node2D** and attach `bullet_model.gd` (or create a custom node that instantiates it).
-2. Add a **MultiMeshInstance2D** as a sibling or child and attach `bullet_view.gd`.
-3. In the **BulletView** inspector, set **`model`** to your BulletModel node.
-   - `shape` → your `Shape2D` (e.g., `CircleShape2D`)
-   - `max_velocity` → cap speed (e.g., `400`)
-   - `acceleration` → per-axis acceleration (e.g., `Vector2(0, 0)`)
+1. Add a `ServerBulletController` or `NodeBulletController` node to your scene.
+2. Create a `BulletConfig` resource and assign it to the controller's `Config` export:
+   - Set a `Shape2D` for collision
+   - Assign a `MovementConfig` (e.g. `LinearMovementConfig`)
+   - Add one or more `DespawnCondition` resources (e.g. `LifetimeDespawnCondition`)
+   - Set collision layer and mask as needed
+3. For `ServerBulletController`, assign a `BulletView` (`MultiMeshInstance2D`) to the `View` export.
+4. Create a `BulletPattern` resource (e.g. `CirclePattern` or `ArcPattern`).
+5. Call `SpawnPattern` to fire:
 
-> The `BulletModel` automatically sets `model.space = get_world_2d().get_space()` in `_ready()`.
-
-### 2) Spawning Bullets
-
-Call `spawn_bullet()` on the **BulletModel** with a velocity in pixels/second. The bullet uses the model's `global_position` as the origin.
-
-```gdscript
-# Example: Fire a bullet to the right at 800 px/s
-@onready var bullets: BulletModel = $BulletModel
-
-func _input(event):
-    if event.is_action_pressed("fire"):
-        bullets.spawn_bullet(Vector2(800, 0))
+```csharp
+BulletController.SpawnPattern(pattern, GlobalPosition, GlobalRotation);
 ```
-
-The **BulletView** syncs its `MultiMesh` transforms to **BulletModel**. It also sets a `custom_aabb` based on the current viewport for efficient culling.
-
-### 3) Physics Updates
-`BulletModel._physics_process(delta)` updates all bullet positions and velocities, then emits `bullets_updated(...)` with a `PackedVector2Array` for fast, contiguous memory copies into the MultiMesh.
 
 ## Extending
 
-- **Collisions**: turn on collision masks and query shapes with `PhysicsServer2D` or use an `Area2D` field test per bullet when needed.
-- **Trails / Effects**: render particles or trail meshes indexed to bullet positions.
-- **Pooling**: transform `bullets` into a pool to avoid allocations under heavy fire.
+### Custom movement
+
+```csharp
+[GlobalClass]
+public partial class HomingMovementConfig : MovementConfig
+{
+    [Export] public float Speed { get; set; } = 200f;
+
+    public override IMovementStrategy CreateStrategy() => new HomingMovementStrategy(Speed);
+}
+
+public class HomingMovementStrategy : IMovementStrategy
+{
+    private float _speed;
+    public HomingMovementStrategy(float speed) => _speed = speed;
+
+    public Vector2 Calculate(Vector2 position, float angle, float lifetime, float delta)
+    {
+        // custom logic here
+        return Vector2.FromAngle(angle) * _speed * delta;
+    }
+}
+```
+
+### Custom despawn condition
+
+```csharp
+[GlobalClass]
+public partial class OutOfBoundsDespawnCondition : DespawnCondition
+{
+    [Export] public Rect2 Bounds { get; set; }
+
+    public override bool ShouldDespawn(Vector2 position, float angle, float lifetime)
+        => !Bounds.HasPoint(position);
+}
+```
+
+### Custom pattern
+
+```csharp
+[GlobalClass]
+public partial class SpiralPattern : BulletPattern
+{
+    [Export] public int BulletCount { get; set; } = 12;
+
+    public override SpawnData[] GetSpawnData(float targetAngle = 0f)
+    {
+        var spawns = new SpawnData[BulletCount];
+        float step = Mathf.Tau / BulletCount;
+        for (int i = 0; i < BulletCount; i++)
+        {
+            float angle = targetAngle + i * step;
+            spawns[i] = new SpawnData { Position = Vector2.Zero, Angle = angle };
+        }
+        return spawns;
+    }
+}
+```
+
+## License
+
+MIT
